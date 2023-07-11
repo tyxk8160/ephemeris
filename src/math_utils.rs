@@ -2,6 +2,7 @@
 #[allow(dead_code)]
 
 use std::f64::consts::PI;
+use crate::constants;
 
 /**
 * 角度定义
@@ -124,4 +125,45 @@ fn test_angle() {
 
     println!("{}", e.radis());
     println!("{}", e.time(2));
+}
+
+
+
+//
+
+
+// 计算TD-UT相关的计算
+
+fn dt_ext(y: f64, jsd: f64) -> f64 {
+    let dy = (y - 1820.0) / 100.0;
+    -20.0 + jsd * dy.powi(2)
+}
+
+fn dt_calc(y: f64) -> f64 {
+    let dt_at_len = constants::DT_AT.len();
+    let y0 = constants::DT_AT[dt_at_len - 2]; // 表中最后一年
+    let t0 = constants::DT_AT[dt_at_len - 1]; // 表中最后一年的deltatT
+    if y >= y0 {
+        let jsd = 31.0; // sjd是y1年之后的加速度估计。瑞士星历表jsd=31,NASA网站jsd=32,skmap的jsd=29
+        if y > y0 + 100.0 {
+            return dt_ext(y, jsd);
+        }
+        let v = dt_ext(y, jsd); // 二次曲线外推
+        let dv = dt_ext(y0, jsd) - t0; // ye年的二次外推与te的差
+        return v - (dv * (y0 + 100.0 - y)) / 100.0;
+    }
+    let d = &constants::DT_AT;
+    for i in (0..d.len()).step_by(5) {
+        if y < d[i + 5] {
+            let t1 = ((y - d[i]) / (d[i + 5] - d[i])) * 10.0;
+            let t2 = t1 * t1;
+            let t3 = t2 * t1;
+            return d[i + 1] + d[i + 2] * t1 + d[i + 3] * t2 + d[i + 4] * t3;
+        }
+    }
+    0.0
+}
+
+pub fn dt_t(t: f64) -> f64 {
+    dt_calc(t / 365.2425 + 2000.0) / 86400.0
 }
