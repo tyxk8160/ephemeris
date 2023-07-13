@@ -1,0 +1,9 @@
+# 忽略警告 "variants are never constructed"
+ignore_warnings = [
+    "unused-variables",
+    "unused-imports",
+    "unused-macros",
+    "unknown-lints",
+    "clippy",
+    "variants-never-constructed",
+]

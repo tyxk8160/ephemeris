@@ -1,8 +1,8 @@
 #[allow(dead_code)]
 use std::f64::consts::PI;
-use crate::math_utils;
-use crate::ephemeris;
-use crate::constants;
+use crate::internal::math_utils;
+use crate::internal::ephemeris;
+use crate::internal::constants;
 
 #[derive(Debug, Default)]
 pub struct YearCalender {
