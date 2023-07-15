@@ -2,15 +2,42 @@
 use crate::internal::lunnar::{ AstroyDate, calc_year_calendar, self };
 use crate::internal::constants;
 
+/// 年历相关结构
+/// 
+/// 年历结构，包含上一年的冬至到本年的冬至。比如`years`字段为2023年时，
+/// 覆盖的范围包含2022年冬至-2023年冬至
+/// 
+/// # Example
+/// ```
+/// use ephemeris::lunnar::*;
+/// let y = YearCalender::new(2023);
+/// println!("中气:{:?}", y.zq); 
+/// println!("合朔:{:?}", y.hs);
+/// ```
+/// 
+/// 通过日期，获取改日期所属年历信息  
+/// **注意**： 时间换算成了天数，比如12:00， 0.5天
+/// ```
+/// use ephemeris::lunnar::*;
+/// let y =  YearCalender::from_date(2033, 12, 23.5);
+/// println!("所属年历年份:{}", y.year); // 2024
+/// ```
 #[derive(Debug, Clone, Default)]
 pub struct YearCalender {
-    pub year: i32, // 年分
-    pub zq: [f64; 25], // 中气计算, 返回儒历日, 0项是冬至
-    pub hs: [f64; 15], // 合朔计算
-    pub lunar_month: [i32; 15], // 记录月份名，leap| month
-    pub lunar_leap: i32, // 闰月月序
-
-    pub pe1: f64, // 补足小雪在11月场景
+    /// 年份
+    pub year: i32, 
+    /// 中气计算, 返回儒历日, 0项是冬至
+    pub zq: [f64; 25], 
+    /// 合朔计算,返回儒历日, 0项是十一月
+    pub hs: [f64; 15], 
+    /// 记录月份名，leap| month
+    pub lunar_month: [i32; 15],
+    /// 闰月月序 
+    pub lunar_leap: i32, 
+    /// 冬至前一个节气, pe1,pe2补足部分年份农历十一月初，
+    /// 公历还是小雪刚过，直接严格照中气计算年历会导致计算闰月不方便 
+    pub pe1: f64, 
+    /// 冬至前两个节气
     pub pe2: f64,
 
     // private
@@ -54,7 +81,19 @@ impl YearCalender {
         y
     }
 
-    /// 获取第n个月的信息（年，月，是否润月，天数）
+    /// 获取第n个月(农历)的信息（年，月，是否润月，天数）
+    /// 
+    /// 第0个月固定为农历时十一月
+    /// 
+    /// # Example
+    /// ```
+    /// use ephemeris::lunnar::*;
+    /// let y = YearCalender::new(2023);
+    /// const YM:[&str;12]=["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月","九月", "十月", "冬月", "腊月"];
+    /// let (ly, lm, lleap,ldays) = y.nth_month(4);
+    /// println!("年:{}, 月:{}{}, 天数:{}", ly, 
+    /// if lleap!=0 {"闰"}else{""}, YM[(lm as usize + 11)%12 ], ldays);
+    /// ```
     pub fn nth_month(&self, n: usize) -> (i32, i32, i32, i32) {
         let mut y = self.year;
         let t = self.lunar_month[n];
@@ -73,7 +112,12 @@ impl YearCalender {
         (y, m, leap, days)
     }
 
-    /// 获取第n个节气的序号，增加pe2, pe1, 补足农历11月缺口
+    /// 获取第n个节气的序号
+    /// 
+    /// 为了计算简单，增加pe2, pe1, 补足农历11月缺口
+    /// 
+    /// # Example
+    /// 参考精确气计算函数计算[`qi_accurate2`](crate::lunnar::qi_accurate2)
     pub fn nth_q24(&self, n: usize) -> f64 {
         match n {
             0 => self.pe2,
@@ -109,6 +153,10 @@ impl YearCalender {
     }
 }
 
+/// 月历结构
+/// 
+/// 主要功能获取月历 首日的儒略日，月的天数， 月首的农历信息等
+/// 主要函数有计算某个月每一天的信息的函数 [get_lunars](crate::lunnar::MonthCalender::get_lunars)
 #[derive(Debug, Default, Clone)]
 pub struct MonthCalender {
     pub years: i32,
@@ -123,6 +171,7 @@ pub struct MonthCalender {
 }
 
 impl MonthCalender {
+    /// 通过年和月初始化一个月历函数
     pub fn new(year: i32, month: i32) -> Self {
         let firt_jd = AstroyDate::from_day(year, month, 1.5).jd;
         let mut y = YearCalender::new(year);
@@ -163,6 +212,16 @@ impl MonthCalender {
     }
 
     /// 获取日历信息,返回每一天信息
+    /// 
+    /// # Example
+    /// ```
+    /// use ephemeris::lunnar::*;
+    /// let mut m = MonthCalender::new(2033, 12);
+    /// let r = m.get_lunars();
+    ///  for i in r.iter() {
+    ///        println!("{:?} {}", i, i.date_gz);
+    ///  }
+    /// ```
     pub fn get_lunars(&mut self) -> Vec<DateDetail> {
         let mut _i = 0_usize;
         let mut zq: f64 = self._year.pe2;
@@ -250,11 +309,35 @@ impl MonthCalender {
     }
 }
 
+/// 公历
+/// 
+/// 主要提供公历转农历，以及八字计算等功能
+/// # Example
+/// `SolorDate(2023, 11,12)`表示公历2023-11-12
+/// - 公历转农历
+/// ```
+/// use ephemeris::lunnar::*;
+/// const YM:[&str;12]=["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月","九月", "十月", "冬月", "腊月"];
+/// let x = SolorDate(2033, 12, 23).to_lunar_date();
+/// println!("公历2023-12-23 农历：{}年 {}{} {}日",
+/// x.0, if x.3!=0{ "闰"} else {""}, YM[(x.1 as usize + 11)%12], x.2 );
+/// ```
+/// - 公历转四柱八字
+/// **注意**: 默认是采用东八区计算的，自己可以转真太阳时
+/// ```
+/// use ephemeris::lunnar::*;
+/// let d = SolorDate(2023, 11, 11);
+/// // 时间12点
+/// let sz = d.sizhu(0.5);
+/// println!("{} {} {} {}", sz.0, sz.1, sz.2, sz.3); // 癸卯 癸亥 癸酉 戊午
+/// ```
 #[derive(Debug, Default, Clone)]
-pub struct SolorDate(i32, i32, i32); // 年月日
+pub struct SolorDate(pub i32, pub i32, pub i32); // 年月日
 
 impl SolorDate {
     /// 将公历转农历
+    /// 
+    /// 用法参见[`SolorDate`](crate::lunnar::SolorDate)
     pub fn to_lunar_date(&self) -> LunarDate {
         let (lunar_date, _) = self.to_lunar_date_();
         lunar_date
@@ -274,8 +357,11 @@ impl SolorDate {
         (LunarDate(ly, lm, lunar_days, lleap), yx - 1)
     }
 
+    /// 计算日期前一个或者后一个节或气
+    /// 
     /// 计算公历 前一个节、或气， 或者后一个节或气, 0表示气，1表示节，返回节气的序号,
     /// 前一个d=0, 后一个d=1 返回值第一个为节气， 第一个为精确值
+    /// 该方法在四柱中推算行运年份有用
     pub fn jq24(&self, jq_type: i32, d: usize) -> (f64, usize) {
         let jd = AstroyDate::from_day(self.0, self.1, (self.2 as f64) + 0.5).jd;
         let y = YearCalender::from_date(self.0, self.1, (self.2 as f64) + 0.5);
@@ -300,6 +386,9 @@ impl SolorDate {
     }
 
     /// 计算年月日干支 采用浮点12 点为 0.5
+    /// 
+    /// 计算四柱，按照东八区时间推算，可以自行转为太阳时
+    /// 用法参见[`SolorDate`](crate::lunnar::SolorDate)
     pub fn sizhu(&self, t: f64) -> (GanZhi, GanZhi, GanZhi, GanZhi) {
         let jd = AstroyDate::from_day(self.0, self.1, (self.2 as f64) + t).jd;
         let y = YearCalender::from_date(self.0, self.1, (self.2 as f64) + 0.5);
@@ -335,6 +424,32 @@ impl SolorDate {
 }
 
 /// 精确计算中气
+/// 
+/// 先根据粗略的中气儒略日，计算精确的中气时刻
+/// 
+/// # Example
+/// 计算2023年立春的时间点
+/// ```
+/// use ephemeris::lunnar::*;
+/// use ephemeris::internal::math_utils::Angle;
+/// use ephemeris::internal::lunnar::AstroyDate;
+/// use std::f64::consts::PI;
+/// let y = YearCalender::new(2023);
+/// const SOLAR_TERMS: [&str; 24] = [
+///    "小雪", "大雪", "冬至", "小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明",
+/// "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露",
+/// "秋分", "寒露", "霜降", "立冬",
+/// ];
+/// let nth =5;
+/// let jd = y.nth_q24(nth); // 立春计算
+/// let jd = qi_accurate2(jd); // 精确时间计算
+/// let (y,m,d) = AstroyDate::jd2day(jd);
+/// let d1 = d.floor() as i32;
+/// let mut r=Angle::from_f64((d - d1 as f64)*2.0 * PI);
+/// println!("{}时间为:{}-{}-{} {}", SOLAR_TERMS[nth], 
+/// y, m, d1, r.time(2)); // 立春时间为:2023-2-4 10h 42m 31.35s
+/// ```
+/// 
 pub fn qi_accurate2(jd: f64) -> f64 {
     let jd = jd - constants::J2000;
     let jd_ = lunnar::qi_accurate2(jd);
@@ -343,17 +458,34 @@ pub fn qi_accurate2(jd: f64) -> f64 {
 }
 
 /// 精确的朔月计算
+/// 
+/// 原理与精气计算类似，
+/// 用法参考[`qi_accurate2`](crate::lunnar::qi_accurate2)
 pub fn so_accurate2(jd: f64) -> f64 {
     let jd: f64 = jd - constants::J2000;
     let jd_ = lunnar::so_accurate2(jd);
     jd_ + constants::J2000
 }
 
+/// 农历
+/// 
+/// 0: 年， 1:月， 2:日，3:是否闰月，1为闰月，否则非闰月  
+/// 主要功能是表示农历，以及实现将农历转为公历
+/// 
+/// # Example
+/// 
+/// ```
+/// use ephemeris::lunnar::*;
+/// let a = LunarDate(2023,10,17,0);
+/// println!("{:?}", a.to_solor_date()); // SolorDate(2023, 11, 29)
+/// ```
 #[derive(Debug, Default, Copy, Clone)]
-pub struct LunarDate(i32, i32, i32, i32); // 最后一个变量指定是否是闰月
+pub struct LunarDate(pub i32, pub i32, pub i32, pub i32); // 最后一个变量指定是否是闰月
 
 impl LunarDate {
     /// 将农历转为公历
+    /// 
+    /// 用法参见[LunarDate](crate::lunnar::LunarDate)
     pub fn to_solor_date(&self)->SolorDate {
         let LunarDate(mut y, mut m, d, leap) = *self;
 
@@ -376,19 +508,48 @@ impl LunarDate {
 }
 
 /// 每日的日历信息
+/// 
+/// 包含基本星期、日干支、月干支等信息
 #[derive(Debug, Default, Clone)]
 pub struct DateDetail {
+    /// 星期， 0: 周日， 1: 周一， ..., 6:周六
     pub week: i32, // 周几
+    /// 公历日期
+    /// 比如11-23, `day=23`
     pub day: i32, //号序数
+    /// 当天的农历日期
     pub lunar: LunarDate, // 农历日期
+    /// 日干支
     pub date_gz: GanZhi, // 日期干支
+    /// 月干支
+    /// 
+    /// **注意**: 习惯上玄学都是用节气做月的分界线，比如2月立春后才算**寅**月
     pub month_gz: GanZhi, // 月份干支
+    /// 是否是节气， 非节气jq=-1，jq24表示节气的序数
+    /// 
+    /// 0: 小雪， 1: 大雪， ...
     pub jq24: i32, // 节气
 }
 
 /// 干支
+/// 
+/// GanZhi(0,0)表示甲子，(-1,1)表示单独一个支
+/// # Example
+/// 主要提供计算前一天干支。后一天干支的功能
+/// ```
+/// use ephemeris::lunnar::*;
+/// let gz = GanZhi(0,0);// 甲子
+/// println!("当前干支：{}", gz); // 当前前干支：甲子
+/// let gz1 = gz.inc();  
+/// println!("后一天干支:{}", gz1); // 后一天干支:乙丑
+/// let gz2 = gz.dec();
+/// println!("前一天干支:{}", gz2); // 前一天干支:癸亥
+
+/// let g = GanZhi(7, -1);
+/// println!("当前:{}, 前一天:{}， 后一天:{}", g, g.dec(), g.inc()); // 前一天干支:癸
+/// ```
 #[derive(Debug, Copy, Clone, Default)]
-pub struct GanZhi(i32, i32); //  第一位干 ，第二位支， GanZhi(0,0) 表示甲子
+pub struct GanZhi(pub i32, pub i32); //  第一位干 ，第二位支， GanZhi(0,0) 表示甲子
 
 impl GanZhi {
     const GAN: [&str; 10] = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -408,19 +569,43 @@ impl GanZhi {
     ];
 
     pub fn inc(&self) -> Self {
-        Self((self.0 + 1) % 10, (self.1 + 1) % 12)
+        let g = match self.0 {
+            -1 =>-1,
+            _=>(self.0 + 1) % 10
+        };
+        let z = match self.1 {
+            -1 =>-1,
+            _=>(self.1 + 1) % 12  
+        };
+        Self(g, z)
     }
 
     pub fn dec(&self) -> Self {
-        Self((self.0 - 1 + 9) % 10, (self.1 - 1 + 12) % 12)
+        let g = match self.0 {
+            -1 =>-1,
+            _=>(self.0 + 9) % 10
+        };
+        let z = match self.1 {
+            -1 =>-1,
+            _=>(self.1 + 11) % 12  
+        };
+        Self(g, z)
     }
 
     pub fn gan(&self) -> &str {
-        Self::GAN[(self.0 as usize) % 10]
+        match self.0 {
+            -1 => "",
+            _ => Self::GAN[(self.0 as usize) % 10]
+        }
+       
     }
 
     pub fn zhi(&self) -> &str {
-        Self::ZHI[(self.1 as usize) % 12]
+        match self.1 {
+            -1=>"",
+            _=> Self::ZHI[(self.1 as usize) % 12]
+            
+        }
     }
 }
 
@@ -428,36 +613,4 @@ impl std::fmt::Display for GanZhi {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}{}", self.gan(), self.zhi())
     }
-}
-
-#[test]
-fn test_calender() {
-    let mut m = MonthCalender::new(2033, 12);
-    let r = m.get_lunars();
-    for i in r.iter() {
-        println!("{:?} {}", i, i.date_gz);
-    }
-}
-
-#[test]
-fn test_solor_to_convert() {
-    let x = SolorDate(2033, 12, 23).to_lunar_date();
-    println!("{:?}", x);
-}
-
-#[test]
-fn test_sizhu() {
-    let d = SolorDate(2023, 11, 11);
-    // 时间12点
-
-    let sz = d.sizhu(0.5);
-
-    println!("{} {} {} {}", sz.0, sz.1, sz.2, sz.3);
-}
-
-#[test]
-fn test_convert_to_solor(){
-    let a = LunarDate(2023,10,17,0);
-    println!("{:?}", a.to_solor_date());
-
 }

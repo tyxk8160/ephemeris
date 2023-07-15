@@ -364,44 +364,8 @@ fn test_xl1_calc() {
     assert!((r - exp_).abs() < 1e-6);
 }
 
-// 行星位置相关计算
 
-#[derive(Debug, Default)]
-pub struct PlanetCoordinates {
-    pub ecliptic_longitude: f64, // 黄经
-    pub ecliptic_latitude: f64, // 黄纬
 
-    pub apparent_longitude: f64, // 视黄经
-    pub apparent_latitude: f64, // 视黄纬
-    pub apparent_right_ascension: f64, //视赤经
-    pub apparent_declination: f64, // 视赤纬度
-
-    pub radius: f64, // 向径
-    pub earth_distance: f64, // 地心距
-    pub light_time_distance: f64, // 光行距
-    pub station_ra: f64, // 站赤经
-    pub station_dec: f64, // 站赤纬
-    pub distance: f64, // 视距离
-    pub azimuth: f64, // 方位角
-    pub altitude: f64, // 高度角
-    pub sidereal_time: (f64, f64), // 恒星时, 真、平
-    pub body: CelestialBody, //星体
-}
-
-#[derive(Debug, Default, PartialEq)]
-pub enum CelestialBody {
-    #[default]
-    Moon, // 月
-    Sun, // 太阳
-    Mercury, // 水星
-    Venus, // 金星
-    Mars, // 火星
-    Jupiter, // 木星
-    Saturn, //土星
-    Uranus, // 天王
-    Neptune, //海王
-    Pluto, // 冥王
-}
 
 // nutation2(T)
 // hcjj(T)   -> obliquity //黄赤角
@@ -502,13 +466,13 @@ fn pgst(t_: f64, dt: f64) -> f64 {
             constants::RAD
 }
 
-//传入力学时J2000起算日数，返回平恒星时
+// 传入力学时J2000起算日数，返回平恒星时
 pub fn pgst2(jd: f64) -> f64 {
     let dt = math_utils::dt_t(jd);
     pgst(jd - dt, dt)
 }
 
-///// 天体坐标计算
+// 天体坐标计算
 
 #[derive(Debug, Clone, Copy)]
 pub enum PlutoParam {
@@ -533,7 +497,7 @@ pub enum PlutoModel {
     P03,
 }
 
-/// 主要用于冥王星
+// 岁差计算， 主要用于冥王星
 pub fn prece(t: f64, sc: PlutoParam, model: PlutoModel) -> f64 {
     let (n, p) = match model {
         PlutoModel::IAU1976 => (4 as usize, &*constants::DIAU1976),
@@ -650,16 +614,32 @@ fn test_p_coord1() {
     assert!((r.2 - exp_.2).abs() < 1e-6);
 }
 
-//// 待调试函数
 
 // xt星体， jd 儒略日（相对于J2000天数），l经度， fa:纬度
-pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
+pub fn compute_position(xt: usize, jd: f64, l: f64, fa: f64) -> 
+ (f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, (f64, f64)) {
+    let  mut eclon_: f64 = 0.0; // 黄经
+    let  mut eclat_: f64 = 0.0; // 黄纬
+
+    let  mut a_lon_: f64=0.0; // 视黄经
+    let  mut a_lat_: f64=0.0; // 视黄纬
+    let  mut a_ra_: f64=0.0; //视赤经
+    let  mut a_dec_: f64=0.0; // 视赤纬度
+
+    let  mut r_: f64=0.0; // 向径
+    let  mut d_e_: f64=0.0; // 地心距
+    let  mut lt_: f64=0.0; // 光行距
+    let  st_ra_: f64; // 站赤经
+    let  st_dec_: f64; // 站赤纬
+    let  dist_: f64; // 视距离
+    let  az_: f64; // 方位角
+    let  alt_: f64; // 高度角
+    let  sid_time_: (f64, f64); // 恒星时; 真、平
+  
     //行星计算，jd力学时
     //基本参数计算
     let mut t = jd / 36525.0;
     let zd = nutation2(t);
-    // ; let d_l = zd.0;
-    // ; let d_e = zd.1; //章动
     let (d_l, d_e) = zd; //章动
     let e = obliquity(t) + d_e; //真黄赤交角
     let gst_ping = pgst2(jd); //平恒星时
@@ -669,7 +649,6 @@ pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
     let mut a: (f64, f64, f64);
     let mut z2: (f64, f64, f64);
     let mut a2: (f64, f64, f64);
-    let mut s = String::new();
     let mut ra:f64;
     let mut rb:f64;
     let mut rc=0.0;
@@ -688,7 +667,6 @@ pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
         a2 = e_coord(t, 15, 15, 15); //地球
         z = m_coord(t, -1, -1, -1);
         rc = z.2; //月亮
-        println!("z={:?}, a={:?}, ra={:?}", a, a2, ra);
 
         //求光行距
         a2 = h2g(a, a2);
@@ -697,33 +675,24 @@ pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
         rb = z2.2;
 
         //地心黄道及地心赤道
+        
         z.0 = math_utils::rad2mrad(z.0 + d_l);
-        s += &format!(
-            "视黄经 {} 视黄纬 {} 地心距 {:.2}\n",
-
-            math_utils::Angle::from_f64(z.0).degress(2), // rad2str(z[0], 0),
-            math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-            ra
-        );
+        a_lon_ = z.0;
+        a_lat_ = z.1;
+        d_e_ = ra;
         z = llr_conv(z, e); //转到赤道坐标
-        s += &format!(
-            "视赤经 {} 视赤纬 {} 光行距 {:.2}\n",
-            math_utils::Angle::from_f64(z.0).time(2), //rad2str(z[0], 1),
-            math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-            rb
-        );
+        a_ra_ = z.0;
+        a_dec_ =z.1;
+        lt_ = rb;
     }
     if xt < 10 {
         //行星和太阳
         a = p_coord(0, t, -1, -1, -1); //地球
         z = p_coord(xt, t, -1, -1, -1); //行星
         z.0 = math_utils::rad2mrad(z.0);
-        s += &format!(
-            "黄经一 {} 黄纬一 {} 向径一 {:.2}\n",
-            math_utils::Angle::from_f64(z.0).degress(2), //rad2str(z[0], 0),
-            math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-            z.2
-        );
+        eclon_=z.0;
+        eclat_=z.1;
+        r_ =z.2;
 
         //地心黄道
         z = h2g(z, a);
@@ -740,30 +709,21 @@ pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
         rc = z.2; //rc视距
         z.0 = math_utils::rad2mrad(z.0 + d_l); //补章动
 
-        s += &format!(
-            "视黄经 {} 视黄纬 {} 地心距 {:.2}\n",
-            math_utils::Angle::from_f64(z.0).degress(2), //rad2str(z[0], 0),
-            math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-            ra
-        );
+        a_lon_ = z.0;
+        a_lat_ = z.1;
+        d_e_ = ra;
         z = llr_conv(z, e); //转到赤道坐标
-        s += &format!(
-            "视赤经 {} 视赤纬 {} 光行距 {:.2}\n",
-            math_utils::Angle::from_f64(z.0).time(2), //rad2str(z[0], 1),
-            math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-            rb
-        );
+        a_ra_ = z.0;
+        a_dec_ = z.1;
+        lt_ = rb;
     }
 
     let sj = math_utils::rad2rrad(gst + l - z.0); //得到天体时角
 
     z = parallax(z, sj, fa, 0.0); //视差修正
-    s += &format!(
-        "站赤经 {} 站赤纬 {} 视距离 {:.2}\n",
-        math_utils::Angle::from_f64(z.0).time(2), //rad2str(z[0], 1),
-        math_utils::Angle::from_f64(z.1).degress(2), //rad2str(z[1], 0),
-        rc
-    );
+    st_ra_ = z.0;
+    st_dec_ = z.1;
+    dist_ = rc;
 
     z.0 += PI / 2.0 - gst - l; //修正了视差的赤道坐标
     z = llr_conv(z, PI / 2.0 - fa); //转到时角坐标转到地平坐标
@@ -772,18 +732,26 @@ pub fn xing_x(xt: usize, jd: f64, l: f64, fa: f64) -> String {
     if z.1 > 0.0 {
         z.1 += mqc(z.1); //大气折射修正
     }
-    s += &format!(
-        "方位角 {} 高度角 {}\n",
-        math_utils::Angle::from_f64(z.0).degress(2), //rad2str(z[0], 0),
-        math_utils::Angle::from_f64(z.1).degress(2) // rad2str(z[1], 0)
-    );
-    s += &format!(
-        "恒星时 {}(平) {}(真)\n",
-        math_utils::Angle::from_f64(gst_ping).time(2), //,rad2str(rad2mrad(gst_ping), 1),
-        math_utils::Angle::from_f64(gst).time(2) //(rad2mrad(gst), 1)
-    );
+    az_ = z.0;
+    alt_ = z.1;
+    sid_time_ =(gst_ping, gst);
+   
 
-    s
+    let pos: (f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, f64, (f64, f64)) =(eclon_,eclat_,
+        a_lon_,a_lat_,a_ra_,
+        a_dec_,
+        r_,
+        d_e_,
+        lt_,
+        st_ra_,
+        st_dec_,
+        dist_,
+        az_,
+        alt_,
+        sid_time_);
+   
+
+    pos
 }
 
 #[test]
@@ -792,7 +760,7 @@ fn test_xing_x() {
     let jd = 2921.167425921743;
     let l = 1.9911297824990999;
     let fa = 0.38746309394274114;
-    println!("{}", xing_x(xt, jd, l, fa))
+    compute_position(xt, jd, l, fa);
 }
 
 #[test]
@@ -801,5 +769,5 @@ fn test_xing_monn() {
     let jd = 2921.5;
     let l = 1.9911297824990999;
     let fa = -0.38746309394274114;
-    println!("{}", xing_x(xt, jd, l, fa));
+ compute_position(xt, jd, l, fa);
 }
