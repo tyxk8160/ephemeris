@@ -1,6 +1,22 @@
+use std::f64::consts::PI;
 use crate::internal::math_utils;
 use crate::internal::constants;
-use crate::internal::ephemeris::compute_position;
+use crate::internal::ephemeris::{compute_position, self};
+
+/// 黄赤角计算
+/// 
+/// 基本黄赤道角计算，输入是ut时间的儒略日
+/// 
+/// # Argument
+/// 
+/// - `jd`: 儒略日，标准时间
+pub fn obliquity(jd:f64)->f64{
+
+    let t = (jd-constants::J2000)/36525.0;
+    ephemeris::obliquity(t)
+}
+
+
 /// 星体
 ///
 /// 0=>地球， 1=>火星...10=>月球
@@ -126,17 +142,17 @@ impl std::fmt::Display for PlanetCoordinates {
 /// * `tz` - 时区， 比如东八区`tz=-8.0`
 /// * `lon` - 经度信息， 注意是弧度制
 /// * `lat` - 纬度信息，也是采用弧度制
-/// 
+///
 /// # Example
 /// -  计算2023-7-23 12:00水星星历
 ///  时区 东八区， 经度：116°23' 纬39°54'
-/// 
+///
 /// ```
 /// use ephemeris::astronomy::*;
-/// use ephemeris::AstroyDate;
+/// use ephemeris::JulianDate;
 /// use std::f64::consts::PI;
 /// let body = CelestialBody::Mercury;
-/// let  jd = AstroyDate::from_day(2023, 7,23.5).jd;
+/// let  jd = JulianDate::from_day(2023, 7,23.5).jd;
 /// let tz = -8.0; // 东八区
 /// let lon = 116.0/180.0*PI + 23.0/60.0/180.0*PI;
 /// // let lon = 1.9911297824990999;
@@ -158,11 +174,10 @@ pub fn calculate_celestial_body(
     lon: f64,
     lat: f64
 ) -> PlanetCoordinates {
-    let mut jd = jd- constants::J2000;
+    let mut jd = jd - constants::J2000;
 
-    jd = jd + tz/24.0 + math_utils::dt_t(jd); // 转为标准力学时
-    println!("xt:{} , jd:{}, l:{}, fa:{}",
-     body as usize, jd, lon, lat);
+    jd = jd + tz / 24.0 + math_utils::dt_t(jd); // 转为标准力学时
+    println!("xt:{} , jd:{}, l:{}, fa:{}", body as usize, jd, lon, lat);
 
     let (
         eclon_,
@@ -202,3 +217,154 @@ pub fn calculate_celestial_body(
     };
     pos
 }
+
+/// 占星主要宫位计算
+///
+/// 在西洋占星中，主要有太阳、月亮以及九大行星等天体
+/// (注：西洋占星用回归制，黄道十二宫只是一个时间概念，经度位置固定不变)
+/// 此外还有一些重要概念，比如Asc(上升点)， Mc(中天)，借用术数概念将这些概念称为虚星
+/// 上升点是指在天球上东方地平线与天球相交处的点，和术数中命宫概念相同
+///
+///
+/// # Example
+/// 
+/// 计算 2023-3-21 18:30 东八区 121.45E， 31.216666666666665N  上升星座
+/// ```
+/// use std::f64::consts::PI;
+/// use ephemeris::astronomy::*;
+/// use ephemeris::{JulianDate, math_utils};
+/// 
+/// let jd = JulianDate::from_day(2023, 3,21.0+10.5/24.0).jd;
+/// 
+/// let lon = -121.45/180.0*PI;
+/// let lat = 31.216666666666665/180.0 *PI;
+/// let mut h = Hourse::new(jd, -8.0, lon, lat);
+/// 
+/// println!("T={}", h.t());
+/// println!("RA={}", math_utils::Angle::from_f64(h.ra()).degress(2));
+/// 
+/// //上升点的计算
+/// println!("ASC={}", math_utils::Angle::from_f64(h.asc()).degress(2));
+/// // 东升点计算
+/// println!("EP={}", math_utils::Angle::from_f64(h.ep()).degress(2));
+/// 
+/// // 中天点计算
+/// println!("MC={}", math_utils::Angle::from_f64(h.mc()).degress(2));
+/// 
+/// ```
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub struct Hourse {
+    pub jd: f64, // 儒略日， UT时间,
+    pub tz: f64, // 时区
+    pub lon: f64, // 经度
+    pub lat: f64, // 纬度
+
+    _ra: Option<f64>,
+    _t: Option<f64>, // 儒略世纪， 相对于J1900
+    _asc: Option<f64>, // 上升星座经度，弧度制
+    _ep: Option<f64>, // 东升点计算
+    _mc: Option<f64>, // 中天计算
+}
+
+impl Hourse {
+    pub fn new(jd: f64, tz: f64, lon: f64, lat: f64) -> Self {
+        Self { jd: jd, tz: tz, lon: lon, lat: lat, ..Default::default() }
+    }
+    
+    /// 儒略世纪相对于1900年1月1日
+    pub fn t(&mut self)->f64{
+        match self._t {
+            Some(a)=>a,
+            None=>{      
+            
+                let _t = (self.jd - 2415020.0)/36525.0;
+
+                self._t = Some(_t);
+                _t
+
+            }
+        }
+    }
+
+    /// 赤经计算
+    /// 
+    /// 计算赤经，采用弧度制
+    pub fn ra(&mut self)->f64{
+        if let Some(ra_) = self._ra{
+            return ra_;
+        }
+        let _t = self.t();
+
+        let tmp_jd = self.jd  +0.5;
+        let tim = (tmp_jd - tmp_jd.floor())*24.0; //获取时间（小时制）
+        let lon = self.lon/PI * 180.0;
+
+        let mut ra1= (6.6460656 + 2400.0513 * _t + 2.58E-5 * _t * _t + tim) * 15.0 - lon; // 角度制
+        
+        ra1 = math_utils::Angle::from_f64(ra1/180.0*PI).rad; // 弧度制下的ra
+        self._ra = Some(ra1);
+        ra1
+    }
+
+    /// 中天计算
+    /// 
+    pub fn mc(&mut self)->f64{
+        if let Some(mc_) = self._mc{
+            return mc_;
+        }
+        let ob = obliquity(self.jd);
+        let  ra_ = self.ra();
+        let m = ra_.tan();
+        let n = ob.cos();
+       
+        let mut mc_ =m.atan2(n);
+        if ra_>PI/2.0 && ra_ < 3.0*PI/2.0{
+            mc_ += PI;
+        }
+        mc_ = math_utils::Angle::from_f64(mc_).rad;
+        self._mc=Some(mc_);
+        mc_
+
+    }
+
+
+    /// 上升点计算
+    /// 
+    /// 返回上升点经度，采用弧度制表示
+    pub fn asc(&mut self)->f64{
+        if let Some(asc_) = self._asc{
+            return asc_;
+        }
+        let ob = obliquity(self.jd);
+        let ra_ = self.ra();
+        let lat = self.lat;
+        let m = - ra_.sin() * ob.cos() - lat.tan() * ob.sin();
+        let n = ra_.cos();
+
+        let mut asc_ = n.atan2(m);
+        asc_ = math_utils::Angle::from_f64(asc_).rad;
+        self._asc = Some(asc_);
+        asc_
+    }
+
+
+    /// 东升点计算
+    pub fn ep(&mut self)->f64{
+        if let Some(ep_) = self._ep{
+            return ep_;
+        }
+        let ob = obliquity(self.jd);
+        let ra_ = self.ra();
+        let m =  - ra_.sin() * ob.cos();
+        let n = ra_.cos();
+
+        let mut ep_ = n.atan2(m);
+        ep_ = math_utils::Angle::from_f64(ep_).rad;
+        self._ep = Some(ep_);
+        ep_
+    }
+
+
+
+}
+

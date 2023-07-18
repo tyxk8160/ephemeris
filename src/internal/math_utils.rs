@@ -2,14 +2,14 @@
 use std::f64::consts::PI;
 use crate::internal::constants;
 
-/**
- * 角度定义
- * rad  0~2PI
- * mrad -pi - 2Pi
- */
+/// 角度
+/// 
+/// 主要处理角度归化，角度转换等功能
 #[derive(Default, Debug)]
 pub struct Angle {
+    /// 弧度\$ 0-2\pi $
     pub rad: f64,
+    /// 弧度\$ -\pi-\pi $
     pub mrad: f64,
 
     pub hours: Option<i32>,
@@ -73,10 +73,13 @@ impl Angle {
         (d, m, s)
     }
 
+
+    /// 弧度制输出
     pub fn radis(&self) -> String {
         format!("radis:{:?}, mradis:{:?}", self.rad, self.mrad)
     }
-
+    
+    /// 时间制输出
     pub fn time(&mut self, ext: i32) -> String {
         match (self.hours, self.minutes, self.seconds) {
             (Some(x), Some(y), Some(z)) => { format!("{:?}h {:?}m {:?}s", x, y, z) }
@@ -91,7 +94,6 @@ impl Angle {
     }
 
     /// 输出度数
-    ///
     pub fn degress(&mut self, ext: i32) -> String {
         match (self.deg, self.deg_m, self.deg_s) {
             (Some(x), Some(y), Some(z)) => { format!("{:?}° {:?}' {:?}\"", x, y, z) }
@@ -151,6 +153,11 @@ fn dt_calc(y: f64) -> f64 {
     0.0
 }
 
+/// TD-UT计算
+/// 
+/// 注意是修正儒略日之间误差，内部使用
+/// # Argument
+/// - `t`: 相对于J2000的天数
 pub fn dt_t(t: f64) -> f64 {
     dt_calc(t / 365.2425 + 2000.0) / 86400.0
 }
@@ -162,7 +169,13 @@ fn test_dt_t() {
 
 /// 坐标系转换
 
-// 直角转为球坐标
+/// 直角转为球坐标
+/// 
+/// # Argument
+/// 
+/// - `z`: 直角坐标的（x,y,z）
+/// - `returns`: $(\theta, \phi, t)$ 注意，这个半径不是第一个返回值
+/// 
 pub fn xyz2llr(z:(f64,f64,f64)) -> (f64, f64, f64) {
     let (x, y,z) =z;
     let r = (x.powi(2) + y.powi(2) + z.powi(2)).sqrt();
@@ -171,7 +184,10 @@ pub fn xyz2llr(z:(f64,f64,f64)) -> (f64, f64, f64) {
     (rad2mrad(phi), theta, r)
 }
 
-// 球面转直角
+/// 球面转直角
+/// 
+/// # Argument
+/// - `jw`: $(\theta, \phi, r)$ 球面坐标系
 pub fn llr2xyz(jw: (f64,f64,f64)) -> (f64,f64,f64) {
     let (j, w, r_val)= jw;
     let x = r_val * w.cos() * j.cos();
@@ -180,7 +196,7 @@ pub fn llr2xyz(jw: (f64,f64,f64)) -> (f64,f64,f64) {
     (x,y,z)
 }
 
-// 坐标旋转
+/// 球面坐标旋转
 pub fn llr_conv(jw:(f64,f64,f64), e: f64) -> (f64, f64,f64) {
     let (j,w, r2) =jw;
     let r0 = (j.sin() * e.cos() - w.tan() * e.sin()).atan2(j.cos());
@@ -190,7 +206,7 @@ pub fn llr_conv(jw:(f64,f64,f64), e: f64) -> (f64, f64,f64) {
 }
 
 
-// 将角度转为0-2PI之间
+/// 将角度转为 $ 0-2\pi $之间
 pub fn rad2mrad(rad: f64) -> f64 {
     let r = rad - (rad / (2.0 * PI)).floor() * 2.0 * PI;
     let r = if r < 0.0 { r + 2.0 * PI } else { r };
@@ -198,8 +214,8 @@ pub fn rad2mrad(rad: f64) -> f64 {
 }
 
 
-// 将角度转为-pi~pi之间
-
+/// 将角度转为$-\pi-\pi$之间
+/// 
 pub fn rad2rrad( v: f64) -> f64 {
     //对超过-PI到PI的角度转为-PI到PI
     let v = v % (2.0 * PI);

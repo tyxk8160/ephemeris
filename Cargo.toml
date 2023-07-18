@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.4"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "doc_assets/docs-header.html" ]

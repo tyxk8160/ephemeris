@@ -1,5 +1,5 @@
 /// 农历农历相关的函数
-use crate::internal::lunnar::{ AstroyDate, calc_year_calendar, self };
+use crate::internal::lunnar::{ JulianDate, calc_year_calendar, self };
 use crate::internal::constants;
 
 /// 年历相关结构
@@ -47,7 +47,7 @@ pub struct YearCalender {
 
 impl YearCalender {
     pub fn new(year: i32) -> Self {
-        let jd1 = AstroyDate::from_day(year, 1, 1.5).jd; // 计算真实的jd
+        let jd1 = JulianDate::from_day(year, 1, 1.5).jd; // 计算真实的jd
         let jd2 = jd1 - constants::J2000;
 
         let a = calc_year_calendar(jd2);
@@ -71,7 +71,7 @@ impl YearCalender {
 
     /// 从日期获取该日期所属的年历信息
     pub fn from_date(year: i32, m: i32, d: f64) -> Self {
-        let jd = AstroyDate::from_day(year, m, d).jd;
+        let jd = JulianDate::from_day(year, m, d).jd;
         let mut y = YearCalender::new(year);
         // 判断是否要进入下一年年历
         if jd > y.zq[24] {
@@ -134,7 +134,7 @@ impl YearCalender {
 
         while i < js || j < ms {
             if self.hs[j] <= self.zq[i] {
-                let (y, m, d) = AstroyDate::jd2day(self.hs[j]);
+                let (y, m, d) = JulianDate::jd2day(self.hs[j]);
                 println!(
                     "农历月份：{} 天数:{} 日期:{}-{}-{}",
                     self._ym[j],
@@ -145,7 +145,7 @@ impl YearCalender {
                 );
                 j += 1;
             } else {
-                let (y, m, d) = AstroyDate::jd2day(self.zq[i]);
+                let (y, m, d) = JulianDate::jd2day(self.zq[i]);
                 println!("节气：{} 日期:{}-{}-{} ", i, y, m, d as i32);
                 i += 1;
             }
@@ -173,7 +173,7 @@ pub struct MonthCalender {
 impl MonthCalender {
     /// 通过年和月初始化一个月历函数
     pub fn new(year: i32, month: i32) -> Self {
-        let firt_jd = AstroyDate::from_day(year, month, 1.5).jd;
+        let firt_jd = JulianDate::from_day(year, month, 1.5).jd;
         let mut y = YearCalender::new(year);
         // 判断是否要进入下一年年历
         if firt_jd > y.zq[24] {
@@ -207,7 +207,7 @@ impl MonthCalender {
             y
         };
 
-        let d = AstroyDate::from_day(y1, m1, 1.5).jd - AstroyDate::from_day(y, m, 1.5).jd;
+        let d = JulianDate::from_day(y1, m1, 1.5).jd - JulianDate::from_day(y, m, 1.5).jd;
         d as i32
     }
 
@@ -344,7 +344,7 @@ impl SolorDate {
     }
 
     pub fn to_lunar_date_(&self) -> (LunarDate, usize) {
-        let jd = AstroyDate::from_day(self.0, self.1, (self.2 as f64) + 0.5).jd;
+        let jd = JulianDate::from_day(self.0, self.1, (self.2 as f64) + 0.5).jd;
         let y = YearCalender::from_date(self.0, self.1, (self.2 as f64) + 0.5);
 
         // 判断月份
@@ -363,7 +363,7 @@ impl SolorDate {
     /// 前一个d=0, 后一个d=1 返回值第一个为节气， 第一个为精确值
     /// 该方法在四柱中推算行运年份有用
     pub fn jq24(&self, jq_type: i32, d: usize) -> (f64, usize) {
-        let jd = AstroyDate::from_day(self.0, self.1, (self.2 as f64) + 0.5).jd;
+        let jd = JulianDate::from_day(self.0, self.1, (self.2 as f64) + 0.5).jd;
         let y = YearCalender::from_date(self.0, self.1, (self.2 as f64) + 0.5);
 
         let mut _i = 0_usize;
@@ -390,7 +390,7 @@ impl SolorDate {
     /// 计算四柱，按照东八区时间推算，可以自行转为太阳时
     /// 用法参见[`SolorDate`](crate::lunnar::SolorDate)
     pub fn sizhu(&self, t: f64) -> (GanZhi, GanZhi, GanZhi, GanZhi) {
-        let jd = AstroyDate::from_day(self.0, self.1, (self.2 as f64) + t).jd;
+        let jd = JulianDate::from_day(self.0, self.1, (self.2 as f64) + t).jd;
         let y = YearCalender::from_date(self.0, self.1, (self.2 as f64) + 0.5);
 
         // 计算月份干支
@@ -431,8 +431,8 @@ impl SolorDate {
 /// 计算2023年立春的时间点
 /// ```
 /// use ephemeris::lunnar::*;
-/// use ephemeris::internal::math_utils::Angle;
-/// use ephemeris::internal::lunnar::AstroyDate;
+/// use ephemeris::math_utils::Angle;
+/// use ephemeris::JulianDate;
 /// use std::f64::consts::PI;
 /// let y = YearCalender::new(2023);
 /// const SOLAR_TERMS: [&str; 24] = [
@@ -443,7 +443,7 @@ impl SolorDate {
 /// let nth =5;
 /// let jd = y.nth_q24(nth); // 立春计算
 /// let jd = qi_accurate2(jd); // 精确时间计算
-/// let (y,m,d) = AstroyDate::jd2day(jd);
+/// let (y,m,d) = JulianDate::jd2day(jd);
 /// let d1 = d.floor() as i32;
 /// let mut r=Angle::from_f64((d - d1 as f64)*2.0 * PI);
 /// println!("{}时间为:{}-{}-{} {}", SOLAR_TERMS[nth], 
@@ -501,7 +501,7 @@ impl LunarDate {
 
         let mut jd = yc.hs[index];
         jd = jd  + (d - 1) as f64;
-        let a = AstroyDate::jd2day(jd);
+        let a = JulianDate::jd2day(jd);
         SolorDate(a.0, a.1, a.2 as i32)
         
     }

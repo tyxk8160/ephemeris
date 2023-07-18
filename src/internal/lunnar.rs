@@ -27,7 +27,7 @@ impl YearCalender {
 // jd: 相对于儒略日的天数,相对于J2000
 pub fn calc_year_calendar(jd: f64) -> YearCalender {
     let j2000 = constants::J2000;
-    let mut year_info = YearCalender::new(AstroyDate::jd2day(jd + j2000).0);
+    let mut year_info = YearCalender::new(JulianDate::jd2day(jd + j2000).0);
 
     let a: &mut [f64; 25] = &mut year_info.zq;
     let b = &mut year_info.hs;
@@ -148,7 +148,7 @@ fn test_convert_to_lunar() {
     let y = 2023;
     let m = 11;
     let d = 19;
-    let jd2 = AstroyDate::from_day(y, m, (d as f64) + 0.5).jd - constants::J2000;
+    let jd2 = JulianDate::from_day(y, m, (d as f64) + 0.5).jd - constants::J2000;
 
     let yi = calc_year_calendar(jd2);
     println!("{:?}", yi.hs);
@@ -183,11 +183,36 @@ fn test_calc_year_calendar() {
     println!("{:?}", r);
 }
 
+/// 儒略日
+/// 
+/// 儒略日（Julian day）是指从格林威治时间公元前4713年1月1日中午12点开始计算的天数。
+/// 这个日期被称为“儒略日起点”（Julian day zero point），它被广泛用于天文学、地球物理学和其他相关领域中的时间测量和计算中，因为它提供了一种简单而准确的方法来表示任何时间点。
+/// 
+/// 本模块提供儒略日转为公历，以及公历转儒略历功能
+/// 
+/// # Example
+/// 
+/// - 公历转儒略日
+/// 时辰需要转为天数
+/// 
+/// - 儒略日转公历（将时间和天数合在一起）
+/// 
+/// ```
+/// use ephemeris::JulianDate;
+/// //2023-7-23 12:00
+/// let jd = JulianDate::from_day(2023,7,23.5);
+/// assert!((jd.jd-2460149.0).abs() <1e-6);
+/// let (y,m,d) = JulianDate::jd2day(jd.jd);
+/// assert!(y==2023);
+/// assert!(m==7);
+/// assert!((d-23.5).abs()<1e-6);
+/// ```
+/// 
 #[derive(Default, Debug)]
-pub struct AstroyDate {
+pub struct JulianDate {
     pub jd: f64, // 儒略日
 }
-impl AstroyDate {
+impl JulianDate {
     pub fn new(x: f64) -> Self {
         Self {
             jd: x,
@@ -195,19 +220,9 @@ impl AstroyDate {
         }
     }
 
+
+    /// 儒略日转为日期
     pub fn jd2day(x: f64) -> (i32, i32, f64) {
-        //    var r=new Object();
-        //    var D=int2(jd+0.5), F=jd+0.5-D, c;  //取得日数的整数部份A及小数部分F
-        //    if(D>=2299161) c=int2((D-1867216.25)/36524.25),D+=1+c-int2(c/4);
-        //    D += 1524;               r.Y = int2((D-122.1)/365.25);//年数
-        //    D -= int2(365.25*r.Y);   r.M = int2(D/30.601); //月数
-        //    D -= int2(30.601*r.M);   r.D = D; //日数
-        //    if(r.M>13) r.M -= 13, r.Y -= 4715;
-        //    else       r.M -= 1,  r.Y -= 4716;
-        //    //日的小数转为时分秒
-        //    F*=24; r.h=int2(F); F-=r.h;
-        //    F*=60; r.m=int2(F); F-=r.m;
-        //    F*=60; r.s=F;
         let mut year: i32;
         let mut month: i32;
         let day: f64;
@@ -235,6 +250,7 @@ impl AstroyDate {
         (year, month, day)
     }
 
+    /// 从日期构造儒略日
     pub fn from_day(mut y: i32, mut m: i32, d: f64) -> Self {
         let mut n = 0;
         let mut is_green = false; // 判断是否是格林历法
@@ -265,10 +281,10 @@ impl AstroyDate {
 
 #[test]
 fn test_astoy() {
-    let d = AstroyDate::from_day(2023, 6, 29.5);
+    let d = JulianDate::from_day(2023, 6, 29.5);
     println!("{:?}", d.jd);
-    println!("{:?}", AstroyDate::new(2460125.0));
-    println!("{:?}", AstroyDate::jd2day(2460125.0))
+    println!("{:?}", JulianDate::new(2460125.0));
+    println!("{:?}", JulianDate::jd2day(2460125.0))
 }
 
 pub fn calc(jd: f64, qs: &str) -> f64 {
