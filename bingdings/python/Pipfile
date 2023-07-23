@@ -1,0 +1,11 @@
+[[source]]
+url = "https://pypi.mirrors.ustc.edu.cn/simple"
+verify_ssl = true
+name = "pip_conf_index_global"
+
+[packages]
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
