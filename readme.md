@@ -61,7 +61,7 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
   **注意**: 默认是采用东八区计算的，自己可以转真太阳时  
 
   ```rust
-use rust_ephemeris::lunnar::*;
+  use rust_ephemeris::lunnar::*;
   let d = SolorDate(2023, 11, 11);
   // 时间12点
   let sz = d.sizhu(0.5);
@@ -71,18 +71,17 @@ use rust_ephemeris::lunnar::*;
 - 农历转公历
 
   ```rust
- use rust_ephemeris::lunnar::*;
+  use rust_ephemeris::lunnar::*;
   let a = LunarDate(2023,10,17,0);
   println!("{:?}", a.to_solor_date()); // SolorDate(2023, 11, 29)
   ```
 
 - 行星位置计算  
-
-  计算2023-7-23 12:00水星星历 时区 东八区， 经度：116°23’ 纬39°54’
+计算2023-7-23 12:00水星星历 时区 东八区， 经度：116°23’ 纬39°54’
 
   ```rust
- use rust_ephemeris::astronomy::*;
- use rust_ephemeris::JulianDate;
+  use rust_ephemeris::astronomy::*;
+  use rust_ephemeris::JulianDate;
   use std::f64::consts::PI;
   let body = CelestialBody::Mercury;
   let  jd = JulianDate::from_day(2023, 7,23.5).jd;
@@ -98,35 +97,26 @@ use rust_ephemeris::lunnar::*;
      lon,
      lat
   );
-  
   println!("{}", pos);
   ```
 
-- 星座计算  
-
-  计算 2023-3-21 18:30 东八区 121.45E， 31.216666666666665N   
-
+- 星座计算
+  计算 2023-3-21 18:30 东八区 121.45E， 31.216666666666665N    
   
-  
-```rust
-use std::f64::consts::PI;
-   use rust_ephemeris::astronomy::*;
-   use rust_ephemeris::{JulianDate, math_utils};
-   
+  ```rust
+  use std::f64::consts::PI;
+  use rust_ephemeris::astronomy::*;
+  use rust_ephemeris::{JulianDate, math_utils};
   let jd = JulianDate::from_day(2023, 3,21.0+10.5/24.0).jd;
-   
   let lon = -121.45/180.0*PI;
   let lat = 31.216666666666665/180.0 *PI;
   let mut h = Hourse::new(jd, -8.0, lon, lat);
-   
   println!("T={}", h.t());
   println!("RA={}", math_utils::Angle::from_f64(h.ra()).degress(2));
-   
   //上升点的计算
   println!("ASC={}", math_utils::Angle::from_f64(h.asc()).degress(2));
   // 东升点计算
   println!("EP={}", math_utils::Angle::from_f64(h.ep()).degress(2));
-   
   // 中天点计算
   println!("MC={}", math_utils::Angle::from_f64(h.mc()).degress(2));
   ```
@@ -136,8 +126,6 @@ use std::f64::consts::PI;
 
 
 **python用户**
-
-
 
 暂时项目没稳定，未添加到pypi中  
 
@@ -158,7 +146,7 @@ use std::f64::consts::PI;
   print(eph.JulianDate(2023,7,23))
   ```
 
-  更多用户参考rust文档
+ 更多用户参考rust文档
 
 ## 文档
 
@@ -167,8 +155,9 @@ use std::f64::consts::PI;
 ```bash
 cargo doc --no-deps --open
 ```
+- 在线文档
 
-
+https://docs.rs/rust-ephemeris/latest/rust_ephemeris/index.html
 
 ## FAQ
 
