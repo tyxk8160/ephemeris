@@ -2,10 +2,11 @@
 name = "ephemeris"
 version = "0.1.0"
 edition = "2021"
-author = "tyxk8160"
+authors = ["tyxk8160"]
 license = "Apache-2.0"
 description = "A Rust crate for working with astronomical calendars and events"
 keywords = ["astronomy", "calendar", "lunar", "solar", "zodiac"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
