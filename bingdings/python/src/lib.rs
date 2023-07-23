@@ -25,7 +25,7 @@
     rust_2021_compatibility
 )]
 #[allow(clippy::module_name_repetitions)]
-use ::ephemeris as reph;
+use ::rust_ephemeris as reph;
 use ::ephemeris::JulianDate as RJulianDate;
 use pyo3::{ prelude::*, wrap_pyfunction };
 

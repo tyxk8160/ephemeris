@@ -198,7 +198,7 @@ fn test_calc_year_calendar() {
 /// - 儒略日转公历（将时间和天数合在一起）
 /// 
 /// ```
-/// use ephemeris::JulianDate;
+///use rust_ephemeris::JulianDate;
 /// //2023-7-23 12:00
 /// let jd = JulianDate::from_day(2023,7,23.5);
 /// assert!((jd.jd-2460149.0).abs() <1e-6);

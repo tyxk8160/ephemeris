@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = "0.19.0"
 
-[dependencies.ephemeris]
+[dependencies.rust_ephemeris]
 path = "../../"
 version = "*"
 

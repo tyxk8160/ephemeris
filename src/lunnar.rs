@@ -9,7 +9,7 @@ use crate::internal::constants;
 /// 
 /// # Example
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// let y = YearCalender::new(2023);
 /// println!("中气:{:?}", y.zq); 
 /// println!("合朔:{:?}", y.hs);
@@ -18,7 +18,7 @@ use crate::internal::constants;
 /// 通过日期，获取改日期所属年历信息  
 /// **注意**： 时间换算成了天数，比如12:00， 0.5天
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// let y =  YearCalender::from_date(2033, 12, 23.5);
 /// println!("所属年历年份:{}", y.year); // 2024
 /// ```
@@ -87,7 +87,7 @@ impl YearCalender {
     /// 
     /// # Example
     /// ```
-    /// use ephemeris::lunnar::*;
+    ///use rust_ephemeris::lunnar::*;
     /// let y = YearCalender::new(2023);
     /// const YM:[&str;12]=["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月","九月", "十月", "冬月", "腊月"];
     /// let (ly, lm, lleap,ldays) = y.nth_month(4);
@@ -215,7 +215,7 @@ impl MonthCalender {
     /// 
     /// # Example
     /// ```
-    /// use ephemeris::lunnar::*;
+    ///use rust_ephemeris::lunnar::*;
     /// let mut m = MonthCalender::new(2033, 12);
     /// let r = m.get_lunars();
     ///  for i in r.iter() {
@@ -316,7 +316,7 @@ impl MonthCalender {
 /// `SolorDate(2023, 11,12)`表示公历2023-11-12
 /// - 公历转农历
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// const YM:[&str;12]=["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月","九月", "十月", "冬月", "腊月"];
 /// let x = SolorDate(2033, 12, 23).to_lunar_date();
 /// println!("公历2023-12-23 农历：{}年 {}{} {}日",
@@ -325,7 +325,7 @@ impl MonthCalender {
 /// - 公历转四柱八字
 /// **注意**: 默认是采用东八区计算的，自己可以转真太阳时
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// let d = SolorDate(2023, 11, 11);
 /// // 时间12点
 /// let sz = d.sizhu(0.5);
@@ -430,9 +430,9 @@ impl SolorDate {
 /// # Example
 /// 计算2023年立春的时间点
 /// ```
-/// use ephemeris::lunnar::*;
-/// use ephemeris::math_utils::Angle;
-/// use ephemeris::JulianDate;
+///use rust_ephemeris::lunnar::*;
+///use rust_ephemeris::math_utils::Angle;
+///use rust_ephemeris::JulianDate;
 /// use std::f64::consts::PI;
 /// let y = YearCalender::new(2023);
 /// const SOLAR_TERMS: [&str; 24] = [
@@ -475,7 +475,7 @@ pub fn so_accurate2(jd: f64) -> f64 {
 /// # Example
 /// 
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// let a = LunarDate(2023,10,17,0);
 /// println!("{:?}", a.to_solor_date()); // SolorDate(2023, 11, 29)
 /// ```
@@ -537,7 +537,7 @@ pub struct DateDetail {
 /// # Example
 /// 主要提供计算前一天干支。后一天干支的功能
 /// ```
-/// use ephemeris::lunnar::*;
+///use rust_ephemeris::lunnar::*;
 /// let gz = GanZhi(0,0);// 甲子
 /// println!("当前干支：{}", gz); // 当前前干支：甲子
 /// let gz1 = gz.inc();  

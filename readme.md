@@ -46,7 +46,7 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
   `SolorDate(2023, 11,12)`表示公历2023-11-12
 
   ```rust
-  use ephemeris::lunnar::*;
+ use rust_ephemeris::lunnar::*;
   const YM:[&str;12]=["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月","九月", "十月", "冬月", "腊月"];
   let x = SolorDate(2033, 12, 23).to_lunar_date();
   println!("公历2023-12-23 农历：{}年 {}{} {}日",
@@ -59,7 +59,7 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
   **注意**: 默认是采用东八区计算的，自己可以转真太阳时
 
   ```rust
-  use ephemeris::lunnar::*;
+ use rust_ephemeris::lunnar::*;
   let d = SolorDate(2023, 11, 11);
   // 时间12点
   let sz = d.sizhu(0.5);
@@ -69,7 +69,7 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
 - 农历转公历
 
   ```rust
-  use ephemeris::lunnar::*;
+ use rust_ephemeris::lunnar::*;
   let a = LunarDate(2023,10,17,0);
   println!("{:?}", a.to_solor_date()); // SolorDate(2023, 11, 29)
   ```
@@ -79,8 +79,8 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
   计算2023-7-23 12:00水星星历 时区 东八区， 经度：116°23’ 纬39°54’
 
   ```rust
-  use ephemeris::astronomy::*;
-  use ephemeris::JulianDate;
+ use rust_ephemeris::astronomy::*;
+ use rust_ephemeris::JulianDate;
   use std::f64::consts::PI;
   let body = CelestialBody::Mercury;
   let  jd = JulianDate::from_day(2023, 7,23.5).jd;
@@ -106,8 +106,8 @@ ephemeris = { git = "https://github.com/tyxk8160/ephemeris.git", branch = "maste
 
   ```rust
   use std::f64::consts::PI;
-  use ephemeris::astronomy::*;
-  use ephemeris::{JulianDate, math_utils};
+ use rust_ephemeris::astronomy::*;
+ use rust_ephemeris::{JulianDate, math_utils};
    
   let jd = JulianDate::from_day(2023, 3,21.0+10.5/24.0).jd;
    

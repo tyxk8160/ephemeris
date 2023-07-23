@@ -148,8 +148,8 @@ impl std::fmt::Display for PlanetCoordinates {
 ///  时区 东八区， 经度：116°23' 纬39°54'
 ///
 /// ```
-/// use ephemeris::astronomy::*;
-/// use ephemeris::JulianDate;
+///use rust_ephemeris::astronomy::*;
+///use rust_ephemeris::JulianDate;
 /// use std::f64::consts::PI;
 /// let body = CelestialBody::Mercury;
 /// let  jd = JulianDate::from_day(2023, 7,23.5).jd;
@@ -231,8 +231,8 @@ pub fn calculate_celestial_body(
 /// 计算 2023-3-21 18:30 东八区 121.45E， 31.216666666666665N  上升星座
 /// ```
 /// use std::f64::consts::PI;
-/// use ephemeris::astronomy::*;
-/// use ephemeris::{JulianDate, math_utils};
+///use rust_ephemeris::astronomy::*;
+///use rust_ephemeris::{JulianDate, math_utils};
 /// 
 /// let jd = JulianDate::from_day(2023, 3,21.0+10.5/24.0).jd;
 /// 
