@@ -131,7 +131,7 @@ use std::f64::consts::PI;
   println!("MC={}", math_utils::Angle::from_f64(h.mc()).degress(2));
   ```
 
-更多使用方法参考文档  
+更多使用方法参考[文档 ](https://docs.rs/rust-ephemeris/latest/rust_ephemeris/index.html) 
 
 
 
