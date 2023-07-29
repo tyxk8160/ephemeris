@@ -26,7 +26,7 @@
 )]
 #[allow(clippy::module_name_repetitions)]
 use ::rust_ephemeris as reph;
-use ::ephemeris::JulianDate as RJulianDate;
+use ::rust_ephemeris::JulianDate as RJulianDate;
 use pyo3::{ prelude::*, wrap_pyfunction };
 
 // create_exception, exceptions,types::PyList,

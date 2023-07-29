@@ -1,0 +1,19 @@
+[package]
+name = "rust-ephemeris"
+version = "0.1.0-beta"
+edition = "2021"
+authors = ["tyxk8160"]
+license = "Apache-2.0"
+repository = "https://github.com/tyxk8160/ephemeris"
+documentation = "https://docs.rs/crate/rust-ephemeris/"
+description = "A Rust crate for working with astronomical calendars and events"
+keywords = ["astronomy", "calendar", "lunar", "solar", "zodiac"]
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lazy_static = "1.4"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "doc_assets/docs-header.html" ]
