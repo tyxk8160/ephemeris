@@ -120,6 +120,14 @@ impl From<Rlunnar::GanZhi> for JsGanzhi {
 }
 
 
+impl From<GanZhi> for JsGanzhi {
+    fn from(value: GanZhi) -> Self {
+        Self::from(value.inner)
+    }
+    
+}
+
+
 #[derive(Debug, serde::Serialize, serde::Deserialize, Default)]
 #[serde(default)]
 pub struct JsDateDetail {
@@ -194,5 +202,63 @@ impl MonthCalender {
         let r: Vec<JsDateDetail>= data.into_iter().map(JsDateDetail::from).collect();
         Ok(serde_wasm_bindgen::to_value(&r)?)
     }
+    
+}
+
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct GanZhi{
+    inner: Rlunnar::GanZhi,
+}
+
+impl  From<Rlunnar::GanZhi> for GanZhi {
+    fn from(value: Rlunnar::GanZhi) -> Self {
+        Self { inner: value }
+    }
+}
+
+
+#[wasm_bindgen]
+impl GanZhi {
+    #[wasm_bindgen(constructor)]
+    pub fn new(g:i32, z:i32)->Self{
+      Self::from(Rlunnar::GanZhi(g,z))
+
+    }
+    
+    #[wasm_bindgen]
+    pub fn to_obj(&self)->Result<JsValue, JsValue>{
+
+        let r = JsGanzhi::from(self.clone());
+        Ok(serde_wasm_bindgen::to_value(&r)?)
+        
+    }
+
+    #[wasm_bindgen]
+    pub fn inc(&self)->Self{
+        Self::from(self.inner.inc())
+    }
+
+    #[wasm_bindgen]
+    pub fn dec(&self)->Self{
+        Self::from(self.inner.dec())
+    }
+
+    #[wasm_bindgen]
+    pub fn gan(&self)->String{
+        self.inner.gan().to_string()
+    }
+
+    #[wasm_bindgen]
+    pub fn zhi(&self) ->String{
+        self.inner.zhi().to_string()
+    }
+
+    #[wasm_bindgen(js_name="toString")]
+    pub fn display(&self)->String{
+        format!("{}", self.inner)
+    }
+
     
 }
