@@ -22,7 +22,7 @@ use crate::internal::constants;
 /// let y =  YearCalender::from_date(2033, 12, 23.5);
 /// println!("所属年历年份:{}", y.year); // 2024
 /// ```
-#[derive(Debug, Clone, Default)]
+#[derive(Debug,Clone, Default)]
 pub struct YearCalender {
     /// 年份
     pub year: i32, 
@@ -45,6 +45,7 @@ pub struct YearCalender {
     _ym: [String; 15],
 }
 
+
 impl YearCalender {
     pub fn new(year: i32) -> Self {
         let jd1 = JulianDate::from_day(year, 1, 1.5).jd; // 计算真实的jd
@@ -64,7 +65,7 @@ impl YearCalender {
             pe2: a.pe2 + constants::J2000,
             lunar_month: a.lunar_month,
             _days: a.dx,
-            _ym: a.ym,
+             _ym: a.ym,
             ..Default::default()
         }
     }
