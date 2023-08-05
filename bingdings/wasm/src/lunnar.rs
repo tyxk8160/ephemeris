@@ -105,22 +105,52 @@ impl From<Rlunnar::LunarDate> for JsLunarDate {
     
 }
 
+impl From<LunarDate> for JsLunarDate{
+    fn from(value: LunarDate) -> Self {
+        Self::from(value.inner)
+    }
+    
+}
+
+
+
+#[derive(Debug,  Clone, Copy, serde::Serialize, serde::Deserialize, Default)]
+#[serde(default)]
+pub struct JsSolorDate{
+    pub year:i32,
+    pub month: i32,
+    pub day:i32,
+}
+
+impl From<Rlunnar::SolorDate> for JsSolorDate {
+    fn from(value: Rlunnar::SolorDate) -> Self {
+        Self { year: value.0, month: value.1, day: value.2 }
+    }
+}
+
+impl From<SolorDate> for JsSolorDate {
+    fn from(value: SolorDate) -> Self {
+        Self::from(value.inner)
+    }
+    
+}
+
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Default)]
 #[serde(default)]
-pub struct JsGanzhi {
+pub struct JsGanZhi {
     pub gan: i32,
     pub zhi: i32,
 }
 
-impl From<Rlunnar::GanZhi> for JsGanzhi {
+impl From<Rlunnar::GanZhi> for JsGanZhi {
     fn from(value: Rlunnar::GanZhi) -> Self {
         Self { gan: value.0, zhi: value.1 }
     }
 }
 
 
-impl From<GanZhi> for JsGanzhi {
+impl From<GanZhi> for JsGanZhi {
     fn from(value: GanZhi) -> Self {
         Self::from(value.inner)
     }
@@ -134,8 +164,8 @@ pub struct JsDateDetail {
     pub week: i32,
     pub day: i32,
     pub lunar: JsLunarDate,
-    pub date_gz: JsGanzhi,
-    pub month_gz: JsGanzhi,
+    pub date_gz: JsGanZhi,
+    pub month_gz: JsGanZhi,
     pub jq24: i32,
 }
 
@@ -144,8 +174,8 @@ impl From<Rlunnar::DateDetail> for JsDateDetail {
     fn from(value: Rlunnar::DateDetail) -> Self {
         Self { week: value.week, 
             day: value.day, lunar: JsLunarDate::from(value.lunar),
-             date_gz: JsGanzhi::from(value.date_gz),
-              month_gz: JsGanzhi::from(value.month_gz), 
+             date_gz: JsGanZhi::from(value.date_gz),
+              month_gz: JsGanZhi::from(value.month_gz), 
               jq24: value.jq24 }
     }
     
@@ -174,6 +204,14 @@ impl  From<Rlunnar::MonthCalender> for JsMonthCalender {
     
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
+#[serde(default)]
+pub struct JsJieQi{
+    pub jd:f64, // 节气儒略日
+    pub index: usize,//节气序数
+}
+
+#[derive(Debug, Clone)]
 #[wasm_bindgen]
 pub struct MonthCalender{
     inner:Rlunnar::MonthCalender,
@@ -206,7 +244,7 @@ impl MonthCalender {
 }
 
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[wasm_bindgen]
 pub struct GanZhi{
     inner: Rlunnar::GanZhi,
@@ -230,7 +268,7 @@ impl GanZhi {
     #[wasm_bindgen]
     pub fn to_obj(&self)->Result<JsValue, JsValue>{
 
-        let r = JsGanzhi::from(self.clone());
+        let r = JsGanZhi::from(self.clone());
         Ok(serde_wasm_bindgen::to_value(&r)?)
         
     }
@@ -261,4 +299,110 @@ impl GanZhi {
     }
 
     
+}
+
+
+#[derive(Debug, Clone)]
+#[wasm_bindgen]
+pub struct LunarDate{
+    inner:Rlunnar::LunarDate
+}
+
+impl From<Rlunnar::LunarDate> for LunarDate {
+    fn from(value: Rlunnar::LunarDate) -> Self {
+        Self { inner: value }
+    }
+}
+
+
+#[wasm_bindgen]
+impl LunarDate {
+    #[wasm_bindgen(constructor)]
+    pub fn new(y:i32, m:i32, d:i32, leap:i32)->Self{
+        let r= Rlunnar::LunarDate(y,m,d,leap);
+        Self::from(r)
+    }
+
+    
+    #[wasm_bindgen]
+    pub fn to_obj(&self)->Result<JsValue, JsValue>{
+
+        let r = JsLunarDate::from(self.clone());
+        Ok(serde_wasm_bindgen::to_value(&r)?)
+    }
+
+    #[wasm_bindgen]
+    pub fn to_solor_date(&self) -> SolorDate{
+
+        let r = self.inner.to_solor_date();
+        SolorDate::from(r)
+
+    }
+
+    
+}
+
+
+#[derive(Debug, Clone)]
+#[wasm_bindgen]
+pub struct SolorDate{
+    inner:Rlunnar::SolorDate
+}
+
+impl From<Rlunnar::SolorDate> for SolorDate {
+
+   fn from(value: Rlunnar::SolorDate) -> Self {
+        Self { inner: value }
+    }
+
+}
+
+
+
+
+#[wasm_bindgen]
+impl  SolorDate {
+    #[wasm_bindgen(constructor)]
+    pub fn new(y:i32, m:i32, d:i32)->Self{
+        Self {inner: Rlunnar::SolorDate(y, m, d)}
+    }
+
+    #[wasm_bindgen]
+    pub fn to_obj(&self) ->Result<JsValue, JsValue>{
+        let r = JsSolorDate::from(self.clone());
+
+        Ok(serde_wasm_bindgen::to_value(&r)?)
+    }
+    
+
+    #[wasm_bindgen]
+    pub fn to_lunar_date(&self) -> LunarDate{
+        let r = self.inner.to_lunar_date();
+        LunarDate::from(r)
+    }
+
+    
+    #[wasm_bindgen]
+    pub fn jq24(&self, jq_type: i32, d: usize)->Result<JsValue, JsValue>{
+
+        let (jd, index) = self.inner.jq24(jq_type, d);
+
+        let r = JsJieQi{jd:jd, index:index};
+        Ok(serde_wasm_bindgen::to_value(&r)?)
+
+    }
+
+    #[wasm_bindgen]
+    pub fn sizhu(&self, t: f64)->Result<JsValue, JsValue>{
+        let (x1,x2,x3,x4) = self.inner.sizhu(t);
+
+        
+
+        let r:Vec<JsGanZhi> = vec![x1,x2,x3,x4].into_iter().map(JsGanZhi::from).collect();
+
+        Ok(serde_wasm_bindgen::to_value(&r)?)
+
+    }
+
+
 }
