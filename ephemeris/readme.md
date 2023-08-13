@@ -184,4 +184,117 @@ Rust 社区 - 感谢他们在 Rust Astro 开发过程中提供的支持和帮助
 
 [openai](https://openai.com/) - 绝大部分代码是chatGTP从js代码或者一些数学公式翻译成rust, 节省了大量的搬砖时间
 
- 
+
+
+
+
+```c
+// clang -O2 -target bpf -c bpf_program.c -o bpf_program.o
+#include <linux/bpf.h>
+#define SEC(NAME) __attribute__((section(NAME), used))
+SEC("tracepoint/syscalls/sys_enter_execve")
+int bpf_prog(void *ctx) {
+ char msg[] = "Hello, BPF World!";
+ bpf_trace_printk(msg, sizeof(msg));
+ return 0;
+}
+char _license[] SEC("license") = "GPL";
+```
+
+
+
+```c
+#include <stdio.h>
+#include <uapi/linux/bpf.h>
+#include "bpf_load.h"
+int main(int argc, char **argv) {
+ if (load_bpf_file("hello_world_kern.o") != 0) {
+ printf("The kernel didn't load the BPF program\n");
+ return -1;
+ }
+ read_trace_pipe();
+ return 0;
+}
+```
+
+
+
+ ```python
+from bcc import BPF
+bpf_source = """
+int do_sys_execve(struct pt_regs *ctx, void filename, void argv, void envp) { 
+ char comm[16];
+ bpf_get_current_comm(&comm, sizeof(comm));
+ bpf_trace_printk("executing program: %s", comm);
+ return 0;
+"""
+bpf = BPF(text = bpf_source)
+execve_function = bpf.get_syscall_fnname("execve") 
+bpf.attach_kprobe(event = execve_function, fn_name = "do_sys_execve")
+bpf.trace_print()
+ ```
+
+
+
+`type`： 指定map的类型
+
+`key_size`: map 的key的大小
+
+`value_size`: map 的value的大小
+
+`max_entries`: 最大数据量
+
+
+
+```bash
+# Files opened by process
+bpftrace -e 'tracepoint:syscalls:sys_enter_open { printf("%s %s\n", comm, str(args->filename)); }'
+# Syscall count by program
+bpftrace -e 'tracepoint:raw_syscalls:sys_enter { @[comm] = count(); }'
+# Read bytes by process:
+bpftrace -e 'tracepoint:syscalls:sys_exit_read /args->ret/ { @[comm] = sum(args->ret); }'
+# Read size distribution by process:
+bpftrace -e 'tracepoint:syscalls:sys_exit_read { @[comm] = hist(args->ret); }'
+
+```
+
+
+
+`tracepoint:syscalls:sys_enter_open`: 跟踪点
+
+`comm`: 默认变量， 表示程序名称
+
+`args`: 跟踪函数的入参
+
+```bash
+#!/usr/bin/env bpftrace
+#include <linux/sched.h>
+BEGIN
+{
+    printf("Tracing processes executing kill command...\n");
+    printf("%-10s  %-20s  %-20s\n", "PID", "Parent PID", "Grandparent PID");
+}
+
+tracepoint:syscalls:sys_enter_kill
+{
+
+    $kill_pid = args->pid;
+    $kill_sig = args->sig;
+
+    printf("%-10d %-20d\n", $kill_pid, $kill_sig);
+
+    $task = (struct task_struct *)curtask;
+    $i = 1;
+    while( $i<10 && $task->pid != 1){
+
+
+         printf("pid: %-10d, comm: %-20s ", $task->pid, $task->comm);
+         $task = $task->parent;
+         $i += 1;
+
+}
+printf("\n");
+}
+
+```
+
